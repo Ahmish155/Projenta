@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Firebase Admin SDK credentials — never commit this
+backend/serviceAccountKey.json
+
+# User-uploaded chat files
+backend/uploads/*
+!backend/uploads/.gitkeep
