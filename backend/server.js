@@ -50,6 +50,8 @@ app.use(cors({ origin: allowedOrigin || false, credentials: true }));
 
 app.use(
   helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -60,12 +62,12 @@ app.use(
           "https://www.googleapis.com",
           "https://apis.google.com",
           "https://api.fontshare.com",
-          "wss:", // your own /ws connection, and covers wss:// on any host
+          "wss:",
         ],
         scriptSrc: ["'self'", "https://apis.google.com", "https://www.gstatic.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://api.fontshare.com", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://cdn.fontshare.com", "https://fonts.gstatic.com", "data:"],
-        frameSrc: ["'self'", "https://accounts.google.com", "https://*.firebaseapp.com", "https://www.facebook.com"],
+        frameSrc: ["'self'", "https://accounts.google.com", "https://*.firebaseapp.com", "https://www.facebook.com", "https://github.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         mediaSrc: ["'self'", "blob:"],
       },
