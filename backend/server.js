@@ -48,7 +48,30 @@ if (!allowedOrigin && process.env.NODE_ENV === "production") {
 }
 app.use(cors({ origin: allowedOrigin || false, credentials: true }));
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "https://identitytoolkit.googleapis.com",
+          "https://securetoken.googleapis.com",
+          "https://www.googleapis.com",
+          "https://apis.google.com",
+          "https://api.fontshare.com",
+          "wss:", // your own /ws connection, and covers wss:// on any host
+        ],
+        scriptSrc: ["'self'", "https://apis.google.com", "https://www.gstatic.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://api.fontshare.com", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://cdn.fontshare.com", "https://fonts.gstatic.com", "data:"],
+        frameSrc: ["'self'", "https://accounts.google.com", "https://*.firebaseapp.com", "https://www.facebook.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        mediaSrc: ["'self'", "blob:"],
+      },
+    },
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(mongoSanitize()); // strips any $ / . keys from req.body, req.query, req.params
 app.use(morgan("dev"));
