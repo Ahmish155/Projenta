@@ -17,9 +17,27 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Vite bakes VITE_* vars in at BUILD time, not runtime. If any are missing —
+// e.g. they weren't set on the hosting platform before the build ran — fail
+// loudly and visibly instead of letting the whole app crash to a blank white
+// screen with nothing but a console error to go on.
+const missingKeys = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
 
-export const googleProvider = new GoogleAuthProvider();
-export const facebookProvider = new FacebookAuthProvider();
-export const githubProvider = new GithubAuthProvider();
+export const firebaseConfigError =
+  missingKeys.length > 0
+    ? `Missing Firebase config: ${missingKeys.join(", ")}. These must be set as environment variables BEFORE the frontend is built — check your hosting platform's env vars and trigger a fresh build.`
+    : null;
+
+let app, auth, googleProvider, facebookProvider, githubProvider;
+
+if (!firebaseConfigError) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
+  facebookProvider = new FacebookAuthProvider();
+  githubProvider = new GithubAuthProvider();
+}
+
+export { auth, googleProvider, facebookProvider, githubProvider };
