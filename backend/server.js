@@ -10,6 +10,9 @@ import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import http from "http";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { WebSocketServer } from "ws";
 
 import connectDB from "./config/db.js";
@@ -65,6 +68,21 @@ app.use("/api/todos", todoRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/uploads", uploadRoutes);
+
+// --- Optional: serve the frontend's build output from this same server ---
+// Only activates if frontend/dist exists (i.e. you built it and it's sitting
+// next to this backend folder) — for a COMBINED single-service deployment.
+// If you deploy the frontend separately (Vercel/Netlify), this block simply
+// never finds the folder and does nothing; no effect on local dev either.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDistPath = path.join(__dirname, "..", "frontend", "dist");
+console.log("Looking for frontend build at:", frontendDistPath, "— found:", fs.existsSync(frontendDistPath));
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get(/^(?!\/api|\/ws).*/, (req, res) => {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);
