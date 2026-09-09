@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import slugify from "slugify";
 import admin from "../config/firebaseAdmin.js";
 import User from "../models/User.js";
@@ -26,22 +27,31 @@ export const createWorkspace = async (req, res) => {
   let i = 1;
   while (await Workspace.findOne({ slug })) slug = `${baseSlug}-${i++}`;
 
-  const tempWorkspace = await Workspace.create({ name: workspaceName, slug, owner: null });
+  // Pre-generate both IDs so Workspace and User can each reference the other
+  // correctly from the moment they're created — avoids the null-then-update
+  // pattern, which fails schema validation since `owner` is required.
+  const workspaceId = new mongoose.Types.ObjectId();
+  const adminId = new mongoose.Types.ObjectId();
 
-  const admin_ = await User.create({
+  const workspace = await Workspace.create({
+    _id: workspaceId,
+    name: workspaceName,
+    slug,
+    owner: adminId,
+  });
+
+  const adminUser = await User.create({
+    _id: adminId,
     firebaseUid: decoded.uid,
     name: decoded.name || decoded.email.split("@")[0],
     email: decoded.email,
     photoURL: decoded.picture || "",
     role: "admin",
     status: "active",
-    workspace: tempWorkspace._id,
+    workspace: workspaceId,
   });
 
-  tempWorkspace.owner = admin_._id;
-  await tempWorkspace.save();
-
-  res.status(201).json({ user: admin_.toSafeObject(), workspace: tempWorkspace });
+  res.status(201).json({ user: adminUser.toSafeObject(), workspace });
 };
 
 // @desc  Called right after any successful Firebase sign-in (email, Google, Facebook, GitHub)
@@ -57,8 +67,6 @@ export const syncUser = async (req, res) => {
 
   let user = await User.findOne({ firebaseUid: decoded.uid }).populate("workspace").populate("team");
 
-  // First-time social login for someone the admin already added by email
-  // (admin-created accounts are linked by email until the person's first login).
   if (!user && decoded.email) {
     user = await User.findOne({ email: decoded.email, firebaseUid: { $exists: false } });
     if (user) {
